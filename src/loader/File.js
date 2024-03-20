@@ -89,27 +89,32 @@ var File = new Class({
 
         if (!this.type || !this.key)
         {
-            throw new Error('Error calling \'Loader.' + this.type + '\' invalid key provided.');
+            throw new Error('Invalid Loader.' + this.type + ' key');
+        }
+
+        var url = GetFastValue(fileConfig, 'url');
+
+        if (url === undefined)
+        {
+            url = loader.path + loadKey + '.' + GetFastValue(fileConfig, 'extension', '');
+        }
+        else if (typeof url === 'string' && !url.match(/^(?:blob:|data:|cordova:\/\/|ionic:\/\/|capacitor:\/\/|http:\/\/|https:\/\/|\/\/)/))
+        {
+            url = loader.path + url;
         }
 
         /**
          * The URL of the file, not including baseURL.
-         * Automatically has Loader.path prepended to it.
+         *
+         * Automatically has Loader.path prepended to it if a string.
+         *
+         * Can also be a JavaScript Object, such as the results of parsing JSON data.
          *
          * @name Phaser.Loader.File#url
-         * @type {string}
+         * @type {object|string}
          * @since 3.0.0
          */
-        this.url = GetFastValue(fileConfig, 'url');
-
-        if (this.url === undefined)
-        {
-            this.url = loader.path + loadKey + '.' + GetFastValue(fileConfig, 'extension', '');
-        }
-        else if (typeof(this.url) !== 'function')
-        {
-            this.url = loader.path + this.url;
-        }
+         this.url = url;
 
         /**
          * The final URL this file will load from, including baseURL and path.
@@ -315,7 +320,14 @@ var File = new Class({
      */
     onLoad: function (xhr, event)
     {
-        var success = !(event.target && event.target.status !== 200);
+        // On iOS, Capacitor often runs on a capacitor:// protocol, meaning local files are served from capacitor:// rather than file://
+        // See: https://github.com/photonstorm/phaser/issues/5685
+
+        var isLocalFile = xhr.responseURL && (xhr.responseURL.indexOf('file://') === 0 || xhr.responseURL.indexOf('cordova://') === 0 || xhr.responseURL.indexOf('ionic://') === 0 || xhr.responseURL.indexOf('capacitor://') === 0);
+
+        var localFileOk = (isLocalFile && event.target.status === 0);
+
+        var success = !(event.target && event.target.status !== 200) || localFileOk;
 
         //  Handle HTTP status codes of 4xx and 5xx as errors, even if xhr.onerror was not called.
         if (xhr.readyState === 4 && xhr.status >= 400 && xhr.status <= 599)
