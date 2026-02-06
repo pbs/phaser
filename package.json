@@ -73,7 +73,7 @@
     "exports-loader": "^4.0.0",
     "fs-extra": "^10.1.0",
     "imports-loader": "^4.0.0",
-    "jsdoc": "^3.6.10",
+    "jsdoc": "^4.0.5",
     "node-sloc": "^0.2.1",
     "path": "^0.12.7",
     "remove-files-webpack-plugin": "^1.5.0",
